@@ -1,0 +1,136 @@
+CREATE SCHEMA `checkpoint2` DEFAULT CHARACTER SET utf8;
+
+# 1. Создать таблицы, соответствующие иерархии из вашей диаграммы классов.
+
+CREATE TABLE `checkpoint2`.`type` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+CREATE TABLE `checkpoint2`.`animal` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(45) NULL,
+  `birthday` DATE NULL,
+  `type` INT NULL,
+  `commands` VARCHAR(120),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `animal_type`
+   FOREIGN KEY (`type`)
+   REFERENCES `checkpoint2`.`type` (`id`)
+   ON DELETE NO ACTION
+   ON UPDATE NO ACTION;
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+USE `checkpoint2`;
+CREATE  OR REPLACE VIEW `Pets` AS
+    SELECT 
+        `animal`.`name` AS `name`, `type`.`name` AS `type`
+    FROM
+        (`animal`
+        JOIN `type` ON ((`animal`.`type` = `type`.`id`)))
+    WHERE
+        ((`type`.`id` = 1) OR (`type`.`id` = 2)
+            OR (`type`.`id` = 3));
+
+USE `checkpoint2`;
+CREATE  OR REPLACE VIEW `pack` AS
+    SELECT 
+        `animal`.`name` AS `name`, `type`.`name` AS `type`
+    FROM
+        (`animal`
+        JOIN `type` ON ((`animal`.`type` = `type`.`id`)))
+    WHERE
+        ((`type`.`id` = 4) OR (`type`.`id` = 5)
+            OR (`type`.`id` = 6));
+			
+
+# 2. Заполнить таблицы данными о животных, их командах и датами рождения.
+
+INSERT INTO `checkpoint2`.`type` (`name`) VALUES ('Dog');
+INSERT INTO `checkpoint2`.`type` (`name`) VALUES ('Cat');
+INSERT INTO `checkpoint2`.`type` (`name`) VALUES ('Hamster');
+INSERT INTO `checkpoint2`.`type` (`name`) VALUES ('Horse');
+INSERT INTO `checkpoint2`.`type` (`name`) VALUES ('Camel');
+INSERT INTO `checkpoint2`.`type` (`name`) VALUES ('Donkey');
+
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Fido', '2020-01-01', '1', 'Sit, Stay, Fetch');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Whiskers', '2019-05-15', '2', 'Sit, Pounce');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Hammy', '2021-03-10', '3', 'Roll, Hide');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Buddy', '2018-12-10', '1', 'Sit, Paw, Bark');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Smudge', '2020-02-20', '2', 'Sit, Pounce, Scratch');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Peanut', '2021-08-01', '3', 'Roll, Spin');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Bella', '2019-11-11', '1', 'Sit, Stay, Roll');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Oliver', '2020-06-30', '2', 'Meow, Scratch, Jump');
+
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Thunder', '2015-07-21', '4', 'Trot, Canter, Gallop');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Sandy', '2016-11-03', '5', 'Walk, Carry Load');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Eeyore', '2017-09-18', '6', 'Walk, Carry Load, Bray');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Storm', '2014-05-05', '4', 'Trot, Canter');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Dune', '2018-12-12', '5', 'Walk, Sit');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Burro', '2019-01-23', '6', 'Walk, Bray, Kick');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Blaze', '2016-02-29', '4', 'Trot, Jump, Gallop');
+INSERT INTO `checkpoint2`.`animal` (`name`, `birthday`, `type`, `commands`) VALUES ('Sahara', '2015-08-14', '5', 'Walk, Run');
+
+
+# 3. Удалить записи о верблюдах и объединить таблицы лошадей и ослов
+
+USE `checkpoint2`;
+CREATE  OR REPLACE VIEW `horse_donkey` AS
+    SELECT 
+        `animal`.`name` AS `name`,
+        `type`.`name` AS `type`,
+        `animal`.`birthday` AS `birthday`,
+        `animal`.`commands` AS `commands`
+    FROM
+        (`animal`
+        JOIN `type` ON ((`animal`.`type` = `type`.`id`)))
+    WHERE
+        ((`type`.`id` = 1) OR (`type`.`id` = 3));
+
+
+# 4. Создать новую таблицу для животных в возрасте от 1 до 3 лет и вычислить их возраст с точностью до месяца.
+
+USE `checkpoint2`;
+CREATE  OR REPLACE VIEW `age` AS
+    SELECT 
+        `animal`.`name` AS `name`,
+        `type`.`name` AS `type`,
+        `animal`.`birthday` AS `birthday`,
+        TIMESTAMPDIFF(YEAR,
+            `animal`.`birthday`,
+            CURDATE()) AS `Year`,
+        (TIMESTAMPDIFF(MONTH,
+            `animal`.`birthday`,
+            CURDATE()) % 12) AS `Month`
+    FROM
+        (`animal`
+        JOIN `type` ON ((`animal`.`type` = `type`.`id`)));
+
+USE `checkpoint2`;
+CREATE  OR REPLACE VIEW `from1to3` AS
+    SELECT 
+        `age`.`name` AS `name`,
+        `age`.`type` AS `type`,
+        `age`.`birthday` AS `birthday`,
+        `age`.`Year` AS `age`
+    FROM
+        `age`
+    WHERE
+        ((`age`.`Year` >= 1)
+            AND (`age`.`Year` <= 3));
+
+# 5. Объединить все созданные таблицы в одну, сохраняя информацию о принадлежности к исходным таблицам.
+
+USE `checkpoint2`;
+CREATE  OR REPLACE VIEW `all_animal` AS
+    SELECT 
+        `animal`.`name` AS `name`,
+        `type`.`name` AS `type`,
+        `animal`.`birthday` AS `birthday`,
+        `animal`.`commands` AS `commands`
+    FROM
+        (`animal`
+        JOIN `type` ON ((`animal`.`type` = `type`.`id`)));
